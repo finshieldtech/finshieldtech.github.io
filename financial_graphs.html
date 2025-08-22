@@ -1,0 +1,272 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Graphs - FinShield</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Required adapter for time-based charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F7F8FA;
+        }
+        .bg-card { 
+            background-color: #FFFFFF; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        .text-primary { color: #E60073; }
+        .btn-primary {
+            background: linear-gradient(90deg, #E60073 0%, #FF4DA6 100%);
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(230, 0, 115, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(230, 0, 115, 0.4);
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="max-w-5xl mx-auto p-4 md:p-6">
+        <!-- Header -->
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <div>
+                 <h1 class="text-3xl font-bold">Financial Graphs</h1>
+                 <p id="user-greeting" class="text-gray-500 mt-1">Your financial overview</p>
+            </div>
+            <a href="index.html" class="btn-primary font-bold py-2 px-5 rounded-lg mt-4 sm:mt-0 inline-block">&larr; Back to App</a>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content" class="space-y-6">
+            <!-- Totals Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-card p-6 rounded-2xl text-center">
+                    <h3 class="text-lg font-bold text-gray-600">Total Expenses</h3>
+                    <p id="total-expenses" class="text-3xl font-extrabold text-red-500 mt-2">RM 0.00</p>
+                </div>
+                <div class="bg-card p-6 rounded-2xl text-center">
+                    <h3 class="text-lg font-bold text-gray-600">Total Outgoing (Expenses + Savings)</h3>
+                    <p id="total-outgoing" class="text-3xl font-extrabold text-orange-500 mt-2">RM 0.00</p>
+                </div>
+            </div>
+
+            <!-- Graphs Section -->
+            <div id="graphs-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="lg:col-span-2 bg-card p-6 rounded-2xl">
+                    <h3 class="text-xl font-bold mb-4">Cash Flow (Last 6 Months)</h3>
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+                <div class="bg-card p-6 rounded-2xl">
+                    <h3 class="text-xl font-bold mb-4">Balance Trend</h3>
+                    <canvas id="balanceTrendChart"></canvas>
+                </div>
+                 <div class="bg-card p-6 rounded-2xl">
+                    <h3 class="text-xl font-bold mb-4">Expense Breakdown</h3>
+                    <div id="expense-chart-container" class="relative h-64 md:h-80 mx-auto" style="max-width: 400px;">
+                        <canvas id="expenseBreakdownChart"></canvas>
+                    </div>
+                     <p id="no-expense-data" class="text-center text-gray-500 hidden">No expense data available to display.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currencySymbol = 'RM'; // Default currency
+
+        // --- UTILITY FUNCTIONS ---
+        function formatCurrency(amount) {
+            if (currencySymbol === 'IDR') {
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+            }
+            // Fallback for RM or other currencies
+            return `${currencySymbol} ${amount.toFixed(2)}`;
+        }
+
+
+        window.onload = () => {
+            // Check for logged-in user
+            const userEmail = localStorage.getItem('finshieldCurrentUser');
+            if (!userEmail) {
+                document.body.innerHTML = `<div class="text-center p-10"><h1 class="text-2xl font-bold">Please log in first.</h1><a href="index.html" class="text-primary font-semibold hover:underline mt-4 inline-block">Go to Login</a></div>`;
+                return;
+            }
+
+            // Load user data and transactions from localStorage
+            const currentUser = JSON.parse(localStorage.getItem(`finshieldUser_${userEmail}`));
+            const transactions = JSON.parse(localStorage.getItem(`finshieldTransactions_${userEmail}`)) || [];
+            
+            if (currentUser) {
+                document.getElementById('user-greeting').textContent = `Showing data for ${currentUser.name}`;
+                // Set currency based on user's country
+                currencySymbol = currentUser.country === 'Indonesia' ? 'IDR' : 'RM';
+            }
+
+            // Handle case where there are no transactions
+            if (transactions.length === 0) {
+                 document.getElementById('main-content').innerHTML = '<p class="text-center text-gray-500 bg-card p-10 rounded-2xl">No transaction data available to generate graphs or totals.</p>';
+                 return;
+            }
+            
+            calculateTotals(transactions);
+            renderFinancialGraphs(transactions);
+        };
+
+        function calculateTotals(transactions) {
+            const totalExpenses = transactions
+                .filter(tx => tx.type === 'expense')
+                .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+            const totalSavings = transactions
+                .filter(tx => tx.type === 'saving')
+                .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+            
+            const totalOutgoing = totalExpenses + totalSavings;
+
+            document.getElementById('total-expenses').textContent = formatCurrency(totalExpenses);
+            document.getElementById('total-outgoing').textContent = formatCurrency(totalOutgoing);
+        }
+
+        function renderFinancialGraphs(transactions) {
+            // --- 1. Cash Flow Chart (Bar Chart) ---
+            const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
+            const monthlyData = {};
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+            sixMonthsAgo.setDate(1);
+
+            // Initialize the last 6 months
+            for (let i = 0; i < 6; i++) {
+                const d = new Date(sixMonthsAgo);
+                d.setMonth(d.getMonth() + i);
+                const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                monthlyData[monthKey] = { income: 0, expense: 0, label: d.toLocaleString('default', { month: 'short' }) };
+            }
+
+            // Populate with transaction data
+            transactions.forEach(tx => {
+                const txDate = new Date(tx.date);
+                if (txDate >= sixMonthsAgo) {
+                    const monthKey = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+                    if (monthlyData[monthKey]) {
+                        if (tx.type === 'income') {
+                            monthlyData[monthKey].income += tx.amount;
+                        } else if (tx.type === 'expense') {
+                            monthlyData[monthKey].expense += Math.abs(tx.amount);
+                        }
+                    }
+                }
+            });
+
+            const labels = Object.values(monthlyData).map(d => d.label);
+            const incomeData = Object.values(monthlyData).map(d => d.income);
+            const expenseData = Object.values(monthlyData).map(d => d.expense);
+
+            new Chart(cashFlowCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: incomeData,
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Expense',
+                            data: expenseData,
+                            backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: { scales: { y: { beginAtZero: true } }, responsive: true }
+            });
+
+            // --- 2. Balance Trend Chart (Line Chart) ---
+            const balanceTrendCtx = document.getElementById('balanceTrendChart').getContext('2d');
+            let cumulativeBalance = 0;
+            const sortedTransactions = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const balancePoints = sortedTransactions.map(tx => {
+                cumulativeBalance += tx.amount;
+                return {
+                    x: new Date(tx.date).getTime(),
+                    y: cumulativeBalance
+                };
+            });
+
+            new Chart(balanceTrendCtx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Total Balance',
+                        data: balancePoints,
+                        borderColor: '#E60073',
+                        backgroundColor: 'rgba(230, 0, 115, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: { unit: 'day', tooltipFormat: 'MMM dd, yyyy' }
+                        },
+                        y: { beginAtZero: false }
+                    },
+                    responsive: true
+                }
+            });
+            
+            // --- 3. Expense Breakdown Chart (Doughnut Chart) ---
+            const expenseTransactions = transactions.filter(tx => tx.type === 'expense');
+            if (expenseTransactions.length > 0) {
+                const expenseBreakdownCtx = document.getElementById('expenseBreakdownChart').getContext('2d');
+                const expenseCategories = {};
+                expenseTransactions.forEach(tx => {
+                    // Use a simple categorization by taking the first word of the expense name
+                    const category = tx.name.split(' ')[0].charAt(0).toUpperCase() + tx.name.split(' ')[0].slice(1);
+                    expenseCategories[category] = (expenseCategories[category] || 0) + Math.abs(tx.amount);
+                });
+
+                const categoryLabels = Object.keys(expenseCategories);
+                const categoryData = Object.values(expenseCategories);
+                
+                new Chart(expenseBreakdownCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: categoryLabels,
+                        datasets: [{
+                            label: 'Expenses',
+                            data: categoryData,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 206, 86, 0.8)',
+                                'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)',
+                                'rgba(230, 0, 115, 0.8)', 'rgba(100, 100, 100, 0.8)'
+                            ],
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            } else {
+                // If there are no expenses, hide the chart and show a message
+                document.getElementById('expense-chart-container').classList.add('hidden');
+                document.getElementById('no-expense-data').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
