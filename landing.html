@@ -1,0 +1,267 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finshield - AI-Powered Finance Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for financial graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #F7F8FA; /* Soft white background */
+            color: #1F2937; /* Dark gray text for readability */
+            overflow-x: hidden;
+        }
+        .bg-blur-gradient {
+            background-image: radial-gradient(circle at 10% 20%, rgba(230, 0, 115, 0.08) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(46, 213, 115, 0.08) 0%, transparent 40%);
+        }
+        .theme-card {
+            background: #FFFFFF;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.07);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .wavy-underline {
+            text-decoration-line: underline;
+            text-decoration-style: wavy;
+            text-decoration-color: #E60073; /* Pink underline */
+            text-underline-offset: 8px;
+        }
+    </style>
+</head>
+<body class="bg-blur-gradient">
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex flex-col pt-16">
+
+        <!-- Hero Section -->
+        <main class="flex-grow container mx-auto px-6 flex flex-col lg:flex-row items-center justify-center text-center lg:text-left">
+            <!-- Left Side: Text Content -->
+            <div class="lg:w-1/2 lg:pr-12 z-10">
+                 <a href="#" class="text-3xl font-bold text-gray-900 mb-8 inline-block">Finshield</a>
+                <h1 class="text-4xl md:text-6xl font-extrabold leading-tight text-gray-900">
+                    Let's control <br> Your Finance <br> with <span class="wavy-underline">Lulu</span>
+                </h1>
+                <p class="mt-8 text-lg text-gray-600 max-w-lg mx-auto lg:mx-0">
+                    realize stable and secure finances and feel the benefits!
+                </p>
+            </div>
+
+            <!-- Right Side: Mascot Image -->
+            <div class="lg:w-1/2 mt-12 lg:mt-0 relative">
+                <img src="mascot 2.png" alt="Finshield Lulu Mascot" class="w-full max-w-sm md:max-w-md mx-auto" onerror="this.onerror=null;this.src='https://placehold.co/600x600/1a1a1a/ffffff?text=Lulu';">
+            </div>
+        </main>
+    </div>
+
+    <!-- Main Features Section -->
+    <section class="py-20 px-6">
+        <div class="container mx-auto max-w-5xl grid md:grid-cols-2 gap-8">
+            <!-- Card 1: Track your money -->
+            <a href="https://finshieldtech.github.io" target="_blank" class="theme-card rounded-2xl p-8 flex flex-col items-center text-center hover:border-green-400 transition-all duration-300 transform hover:-translate-y-2">
+                <div class="text-5xl mb-4">💰</div>
+                <h2 class="text-2xl font-bold mb-3 text-gray-900">Track Your Money</h2>
+                <p class="text-gray-600">
+                    Dive into our comprehensive financial app. Track expenses, set budgets, manage savings goals, and take full control of your wallet.
+                </p>
+                <span class="mt-6 font-semibold text-green-500">Go to App &rarr;</span>
+            </a>
+
+            <!-- Card 2: Educate about money -->
+            <a href="articles.html" class="theme-card rounded-2xl p-8 flex flex-col items-center text-center hover:border-pink-400 transition-all duration-300 transform hover:-translate-y-2">
+                <div class="text-5xl mb-4">📚</div>
+                <h2 class="text-2xl font-bold mb-3 text-gray-900">Educate About Money</h2>
+                <p class="text-gray-600">
+                    Knowledge is power. Browse our curated articles on financial literacy, from investing basics to scam awareness, and empower your decisions.
+                </p>
+                <span class="mt-6 font-semibold text-pink-500">Read Articles &rarr;</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Financial Graphics Section -->
+    <section class="container mx-auto px-6 py-10">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold text-gray-900">Visualize Your Financial Health</h2>
+            <p class="text-lg text-gray-500 mt-2">Interactive charts to help you understand your money at a glance.</p>
+        </div>
+        <div id="charts-container" class="theme-card rounded-2xl p-6 md:p-8">
+            <div id="charts-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Cash Flow Chart -->
+                <div class="lg:col-span-2">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Cash Flow (Last 6 Months)</h3>
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+                <!-- Balance Trend Chart -->
+                <div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Balance Trend</h3>
+                    <canvas id="balanceTrendChart"></canvas>
+                </div>
+                <!-- Expense Breakdown Chart -->
+                <div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Expense Breakdown</h3>
+                    <div class="relative h-64 md:h-80 mx-auto max-w-sm">
+                        <canvas id="expenseBreakdownChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Blank State Message -->
+            <div id="blank-state" class="hidden text-center py-16">
+                <h3 class="text-2xl font-bold text-gray-800">No Data to Display</h3>
+                <p class="text-gray-500 mt-2">Log in or start adding transactions in the Finshield app to see your personalized financial graphs here!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="container mx-auto px-6 py-8 mt-12 text-center text-gray-500">
+        <p>&copy; 2024 Finshield. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // Chart.js script to render financial graphics
+        window.onload = () => {
+            const userEmail = localStorage.getItem('finshieldCurrentUser');
+            const transactions = userEmail ? JSON.parse(localStorage.getItem(`finshieldTransactions_${userEmail}`)) || [] : [];
+
+            if (transactions.length > 0) {
+                document.getElementById('charts-grid').classList.remove('hidden');
+                document.getElementById('blank-state').classList.add('hidden');
+                renderUserCharts(transactions);
+            } else {
+                document.getElementById('charts-grid').classList.add('hidden');
+                document.getElementById('blank-state').classList.remove('hidden');
+            }
+        };
+
+        function renderUserCharts(transactions) {
+            // --- 1. Cash Flow Chart (Bar) ---
+            const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
+            const monthlyData = {};
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+            sixMonthsAgo.setDate(1);
+
+            for (let i = 0; i < 6; i++) {
+                const d = new Date(sixMonthsAgo);
+                d.setMonth(d.getMonth() + i);
+                const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                monthlyData[monthKey] = { income: 0, expense: 0, label: d.toLocaleString('default', { month: 'short' }) };
+            }
+
+            transactions.forEach(tx => {
+                const txDate = new Date(tx.date);
+                if (txDate >= sixMonthsAgo) {
+                    const monthKey = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+                    if (monthlyData[monthKey]) {
+                        if (tx.type === 'income') {
+                            monthlyData[monthKey].income += tx.amount;
+                        } else if (tx.type === 'expense') {
+                            monthlyData[monthKey].expense += Math.abs(tx.amount);
+                        }
+                    }
+                }
+            });
+
+            new Chart(cashFlowCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.values(monthlyData).map(d => d.label),
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: Object.values(monthlyData).map(d => d.income),
+                            backgroundColor: 'rgba(46, 213, 115, 0.6)',
+                            borderColor: 'rgba(46, 213, 115, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Expense',
+                            data: Object.values(monthlyData).map(d => d.expense),
+                            backgroundColor: 'rgba(230, 0, 115, 0.6)',
+                            borderColor: 'rgba(230, 0, 115, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: { scales: { y: { beginAtZero: true } }, responsive: true }
+            });
+
+            // --- 2. Balance Trend Chart (Line) ---
+            const balanceTrendCtx = document.getElementById('balanceTrendChart').getContext('2d');
+            let cumulativeBalance = 0;
+            const sortedTransactions = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const balancePoints = sortedTransactions.map(tx => {
+                cumulativeBalance += tx.amount;
+                return { x: new Date(tx.date).getTime(), y: cumulativeBalance };
+            });
+
+            new Chart(balanceTrendCtx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Total Balance',
+                        data: balancePoints,
+                        borderColor: '#E60073',
+                        backgroundColor: 'rgba(230, 0, 115, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { type: 'time', time: { unit: 'day', tooltipFormat: 'MMM dd, yyyy' } },
+                        y: { beginAtZero: false }
+                    },
+                    responsive: true
+                }
+            });
+            
+            // --- 3. Expense Breakdown Chart (Doughnut) ---
+            const expenseBreakdownCtx = document.getElementById('expenseBreakdownChart').getContext('2d');
+            const expenseTransactions = transactions.filter(tx => tx.type === 'expense');
+            const expenseCategories = {};
+            
+            if (expenseTransactions.length > 0) {
+                 expenseTransactions.forEach(tx => {
+                    const category = tx.name.split(' ')[0].charAt(0).toUpperCase() + tx.name.split(' ')[0].slice(1);
+                    expenseCategories[category] = (expenseCategories[category] || 0) + Math.abs(tx.amount);
+                });
+
+                new Chart(expenseBreakdownCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(expenseCategories),
+                        datasets: [{
+                            label: 'Expenses',
+                            data: Object.values(expenseCategories),
+                            backgroundColor: [
+                                'rgba(230, 0, 115, 0.8)',
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(153, 102, 255, 0.8)'
+                            ],
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            } else {
+                // If there are transactions but no expenses, show a message in the doughnut chart area
+                const container = document.getElementById('expenseBreakdownChart').parentElement;
+                container.innerHTML = `<div class="flex items-center justify-center h-full text-gray-500">No expense data to display.</div>`;
+            }
+        }
+    </script>
+
+</body>
+</html>
